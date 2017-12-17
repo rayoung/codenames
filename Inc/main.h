@@ -58,6 +58,14 @@
 #define SWCLK_Pin GPIO_PIN_14
 #define SWCLK_GPIO_Port GPIOA
 
+typedef enum Card
+{
+	RED,
+	GREEN,
+	YELLOW,
+	BLACK
+} Card;
+
 /* ########################## Assert Selection ############################## */
 /**
   * @brief Uncomment the line below to expanse the "assert_param" macro in the 

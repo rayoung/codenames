@@ -36,7 +36,9 @@
   ******************************************************************************
   */
 
-#define RAND_LOOP	8
+#define NUM_CARDS	25
+#define RAND_LOOP	10
+
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -58,6 +60,13 @@ UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
+Card cards[NUM_CARDS] = {RED, RED, RED, RED, RED,
+						 RED, RED, RED, RED, GREEN,
+						 GREEN, GREEN, GREEN, GREEN, GREEN,
+						 GREEN, GREEN, YELLOW, YELLOW, YELLOW,
+						 YELLOW, YELLOW, YELLOW, YELLOW, BLACK
+						 };
+
 
 /* USER CODE END PV */
 
@@ -119,6 +128,58 @@ void rand_num_test(void)
 	}
 }
 
+
+void swap_cards(Card *a, Card *b)
+{
+	Card temp = *a;
+	*a = *b;
+	*b = temp;
+}
+
+void shuffle_cards(void)
+{
+	uint32_t i, j, n;
+
+	/* RED or GREEN gets extra card */
+	cards[0] = (rand32() & 0x1) ? RED : GREEN;
+
+	for (j = 0; j < RAND_LOOP; j++)
+	{
+		for (i = NUM_CARDS - 1; i > 0; i--)
+		{
+			/* TODO could be more fair*/
+			n = rand32() % (i+1);
+
+			/* swap cards */
+			swap_cards(&cards[i], &cards[n]);
+		}
+
+		/* reverse shuffle next time*/
+		if (j % 0x1)
+		{
+			for (i = 0; i < NUM_CARDS / 2; i++)
+			{
+				swap_cards(&cards[i], &cards[NUM_CARDS - i - 1]);
+			}
+		}
+	}
+}
+
+void print_cards(void)
+{
+	uint32_t i;
+
+	for (i = 0; i < NUM_CARDS; i++)
+	{
+		if (i % 5 == 0)
+		{
+			printf("\n");
+		}
+		printf("%u ", cards[i]);
+	}
+	printf("\n");
+}
+
 /* USER CODE END 0 */
 
 int main(void)
@@ -153,7 +214,9 @@ int main(void)
   MX_USART1_UART_Init();
 
   /* USER CODE BEGIN 2 */
-  rand_num_test();
+//  rand_num_test();
+  shuffle_cards();
+  print_cards();
   /* USER CODE END 2 */
 
   /* Infinite loop */
