@@ -56,6 +56,8 @@ CRC_HandleTypeDef hcrc;
 I2C_HandleTypeDef hi2c1;
 I2C_HandleTypeDef hi2c2;
 
+TIM_HandleTypeDef htim3;
+
 UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
@@ -77,8 +79,10 @@ static void MX_ADC_Init(void);
 static void MX_CRC_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_I2C2_Init(void);
+static void MX_TIM3_Init(void);
 static void MX_USART1_UART_Init(void);
 
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -142,6 +146,7 @@ void shuffle_cards(void)
 
 	/* RED or GREEN gets extra card */
 	cards[0] = (rand32() & 0x1) ? RED : GREEN;
+//	printf("%u\n", cards[0]);
 
 	for (j = 0; j < RAND_LOOP; j++)
 	{
@@ -151,7 +156,7 @@ void shuffle_cards(void)
 			n = rand32() % (i+1);
 
 			/* swap cards */
-			swap_cards(&cards[i], &cards[n]);
+			swap_cards(cards + i, cards + n);
 		}
 
 		/* reverse shuffle next time*/
@@ -159,7 +164,7 @@ void shuffle_cards(void)
 		{
 			for (i = 0; i < NUM_CARDS / 2; i++)
 			{
-				swap_cards(&cards[i], &cards[NUM_CARDS - i - 1]);
+				swap_cards(cards + i, cards + NUM_CARDS - i - 1);
 			}
 		}
 	}
@@ -211,6 +216,7 @@ int main(void)
   MX_CRC_Init();
   MX_I2C1_Init();
   MX_I2C2_Init();
+  MX_TIM3_Init();
   MX_USART1_UART_Init();
 
   /* USER CODE BEGIN 2 */
@@ -413,6 +419,57 @@ static void MX_I2C2_Init(void)
 
 }
 
+/* TIM3 init function */
+static void MX_TIM3_Init(void)
+{
+
+  TIM_ClockConfigTypeDef sClockSourceConfig;
+  TIM_MasterConfigTypeDef sMasterConfig;
+  TIM_OC_InitTypeDef sConfigOC;
+
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 48000;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim3.Init.Period = 1000;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 500;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  HAL_TIM_MspPostInit(&htim3);
+
+  HAL_TIM_PWM_Start_IT(&htim3, TIM_CHANNEL_3);
+}
+
 /* USART1 init function */
 static void MX_USART1_UART_Init(void)
 {
@@ -482,6 +539,7 @@ void _Error_Handler(char * file, int line)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
+  printf("%s: %u\n", file, line);
   while(1) 
   {
   }
