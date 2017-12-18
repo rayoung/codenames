@@ -69,6 +69,7 @@ Card cards[NUM_CARDS] = {RED, RED, RED, RED, RED,
 						 YELLOW, YELLOW, YELLOW, YELLOW, BLACK
 						 };
 
+uint32_t buf[] = {0, 200, 400, 600, 800, 1000};
 
 /* USER CODE END PV */
 
@@ -212,12 +213,12 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_USART1_UART_Init();
   MX_ADC_Init();
   MX_CRC_Init();
   MX_I2C1_Init();
   MX_I2C2_Init();
   MX_TIM3_Init();
-  MX_USART1_UART_Init();
 
   /* USER CODE BEGIN 2 */
 //  rand_num_test();
@@ -422,29 +423,23 @@ static void MX_I2C2_Init(void)
 /* TIM3 init function */
 static void MX_TIM3_Init(void)
 {
-
   TIM_ClockConfigTypeDef sClockSourceConfig;
   TIM_MasterConfigTypeDef sMasterConfig;
   TIM_OC_InitTypeDef sConfigOC;
 
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 48000;
+  htim3.Init.Prescaler = 48000-1;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim3.Init.Period = 1000;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
+  if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
 
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
   if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
-  if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
@@ -460,14 +455,19 @@ static void MX_TIM3_Init(void)
   sConfigOC.Pulse = 500;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  sConfigOC.OCIdleState  = TIM_OCIDLESTATE_RESET;
+  sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
   if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
 
-  HAL_TIM_MspPostInit(&htim3);
-
-  HAL_TIM_PWM_Start_IT(&htim3, TIM_CHANNEL_3);
+  /*##-3- Start PWM signal generation in DMA mode ############################*/
+  if (HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_3, buf, sizeof(buf)/sizeof(uint32_t)) != HAL_OK)
+  {
+    /* Starting Error */
+    Error_Handler();
+  }
 }
 
 /* USART1 init function */
@@ -583,6 +583,12 @@ int __io_putchar(int ch) {
 int __io_getchar(void) {
     // Code to read a character from the UART
 	return 0;
+}
+
+void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
+{
+	printf("%u\n", htim3.Instance->CCR3);
+//	printf("%u\n", htim3.Instance->ARR);
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

@@ -234,65 +234,53 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* hi2c)
 
 }
 
-void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
+void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
 {
+  GPIO_InitTypeDef   GPIO_InitStruct;
+  static DMA_HandleTypeDef  hdma_tim;
 
-  if(htim_base->Instance==TIM3)
-  {
-  /* USER CODE BEGIN TIM3_MspInit 0 */
+  /*##-1- Enable peripherals and GPIO Clocks #################################*/
+  /* TIMx clock enable */
+  __HAL_RCC_TIM3_CLK_ENABLE();
 
-  /* USER CODE END TIM3_MspInit 0 */
-    /* Peripheral clock enable */
-    __HAL_RCC_TIM3_CLK_ENABLE();
-  /* USER CODE BEGIN TIM3_MspInit 1 */
+  /* Enable GPIO Channel3/3N Clocks */
+  __HAL_RCC_GPIOC_CLK_ENABLE();
 
-  /* USER CODE END TIM3_MspInit 1 */
-  }
+  /* Enable DMA clock */
+  __HAL_RCC_DMA1_CLK_ENABLE();
 
-}
+  /**TIM3 GPIO Configuration
+  PC8     ------> TIM3_CH3
+  */
+  GPIO_InitStruct.Pin = GPIO_PIN_8;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  GPIO_InitStruct.Alternate = GPIO_AF1_TIM3;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-void HAL_TIM_MspPostInit(TIM_HandleTypeDef* htim)
-{
+  /* Set the parameters to be configured */
+  hdma_tim.Init.Direction = DMA_MEMORY_TO_PERIPH;
+  hdma_tim.Init.PeriphInc = DMA_PINC_DISABLE;
+  hdma_tim.Init.MemInc = DMA_MINC_ENABLE;
+  hdma_tim.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD ;
+  hdma_tim.Init.MemDataAlignment = DMA_MDATAALIGN_WORD ;
+  hdma_tim.Init.Mode = DMA_CIRCULAR;
+  hdma_tim.Init.Priority = DMA_PRIORITY_HIGH;
 
-  GPIO_InitTypeDef GPIO_InitStruct;
-  if(htim->Instance==TIM3)
-  {
-  /* USER CODE BEGIN TIM3_MspPostInit 0 */
+  /* Set hdma_tim instance */
+  hdma_tim.Instance = DMA1_Channel2;
 
-  /* USER CODE END TIM3_MspPostInit 0 */
+  /* Link hdma_tim to hdma[TIM_DMA_ID_CC3] (channel3) */
+  __HAL_LINKDMA(htim, hdma[TIM_DMA_ID_CC3], hdma_tim);
 
-    /**TIM3 GPIO Configuration
-    PC8     ------> TIM3_CH3
-    */
-    GPIO_InitStruct.Pin = GPIO_PIN_8;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-    GPIO_InitStruct.Alternate = GPIO_AF1_TIM3;
-    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  /* Initialize TIMx DMA handle */
+  HAL_DMA_Init(htim->hdma[TIM_DMA_ID_CC3]);
 
-  /* USER CODE BEGIN TIM3_MspPostInit 1 */
-
-  /* USER CODE END TIM3_MspPostInit 1 */
-  }
-
-}
-
-void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base)
-{
-
-  if(htim_base->Instance==TIM3)
-  {
-  /* USER CODE BEGIN TIM3_MspDeInit 0 */
-
-  /* USER CODE END TIM3_MspDeInit 0 */
-    /* Peripheral clock disable */
-    __HAL_RCC_TIM3_CLK_DISABLE();
-  /* USER CODE BEGIN TIM3_MspDeInit 1 */
-
-  /* USER CODE END TIM3_MspDeInit 1 */
-  }
-
+  /*##-2- Configure the NVIC for DMA #########################################*/
+  /* NVIC configuration for DMA transfer complete interrupt */
+  HAL_NVIC_SetPriority(DMA1_Channel2_3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel2_3_IRQn);
 }
 
 void HAL_UART_MspInit(UART_HandleTypeDef* huart)
