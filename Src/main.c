@@ -36,9 +36,14 @@
   ******************************************************************************
   */
 
-#define NUM_CARDS	25
-#define RAND_LOOP	10
+#define NUM_CARDS		25
+#define LEDS_PER_CARD	2
+#define NUM_LEDS		(NUM_CARDS * LEDS_PER_CARD)
+#define BYTES_PER_LED	(3 * 8)
+#define RAND_LOOP		10
 
+#define PWM_0	20
+#define PWM_1	21
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -69,6 +74,8 @@ Card cards[NUM_CARDS] = {RED, RED, RED, RED, RED,
 						 YELLOW, YELLOW, YELLOW, YELLOW, BLACK
 						 };
 
+uint8_t led_buffer[BYTES_PER_LED * NUM_LEDS];
+
 uint8_t buf[] = {0, 125, 250};
 
 /* USER CODE END PV */
@@ -82,8 +89,6 @@ static void MX_I2C1_Init(void);
 static void MX_I2C2_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_USART1_UART_Init(void);
-
-void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -156,7 +161,6 @@ void shuffle_cards(void)
 			/* TODO could be more fair*/
 			n = rand32() % (i+1);
 
-			/* swap cards */
 			swap_cards(cards + i, cards + n);
 		}
 
@@ -170,6 +174,8 @@ void shuffle_cards(void)
 		}
 	}
 }
+
+
 
 void print_cards(void)
 {
@@ -293,7 +299,7 @@ void SystemClock_Config(void)
   HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
 
   /* SysTick_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(SysTick_IRQn, 3, 0);
 }
 
 /* ADC init function */
