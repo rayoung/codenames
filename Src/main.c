@@ -69,7 +69,7 @@ Card cards[NUM_CARDS] = {RED, RED, RED, RED, RED,
 						 YELLOW, YELLOW, YELLOW, YELLOW, BLACK
 						 };
 
-uint32_t buf[] = {0, 200, 400, 600, 800, 1000};
+uint8_t buf[] = {0, 125, 250};
 
 /* USER CODE END PV */
 
@@ -430,7 +430,7 @@ static void MX_TIM3_Init(void)
   htim3.Instance = TIM3;
   htim3.Init.Prescaler = 48000-1;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 1000;
+  htim3.Init.Period = 500;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
@@ -452,7 +452,7 @@ static void MX_TIM3_Init(void)
   }
 
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 500;
+  sConfigOC.Pulse = 250;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   sConfigOC.OCIdleState  = TIM_OCIDLESTATE_RESET;
@@ -462,8 +462,14 @@ static void MX_TIM3_Init(void)
     _Error_Handler(__FILE__, __LINE__);
   }
 
+//  if (HAL_TIM_PWM_Start_IT(&htim3, TIM_CHANNEL_3))
+//  {
+//    /* Starting Error */
+//    Error_Handler();
+//  }
+
   /*##-3- Start PWM signal generation in DMA mode ############################*/
-  if (HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_3, buf, sizeof(buf)/sizeof(uint32_t)) != HAL_OK)
+  if (HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_3, buf, sizeof(buf)) != HAL_OK)
   {
     /* Starting Error */
     Error_Handler();

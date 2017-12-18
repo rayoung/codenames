@@ -71,6 +71,16 @@ void SysTick_Handler(void)
 
 /* USER CODE BEGIN 1 */
 
+void TIM3_IRQHandler(void)
+{
+	printf("0x%08x\n", TIM3->SR);
+	if(TIM3->SR & TIM_SR_CC3IF)
+	{
+		TIM3->SR &= ~TIM_SR_CC3IF;
+		TIM3->CCR3 = (TIM3->CCR3 > 500) ? 250 : 750;
+	}
+}
+
 void DMA1_Channel2_3_IRQHandler(void)
 {
 	HAL_DMA_IRQHandler(htim3.hdma[TIM_DMA_ID_CC3]);
