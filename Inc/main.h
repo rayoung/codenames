@@ -58,6 +58,9 @@
 #define SWCLK_Pin GPIO_PIN_14
 #define SWCLK_GPIO_Port GPIOA
 
+#define CAP1114_RESET_Pin	GPIO_PIN_5
+#define CAP1114_RESET_Port	GPIOB
+
 typedef enum Card
 {
 	RED,

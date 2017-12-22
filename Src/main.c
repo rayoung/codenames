@@ -46,8 +46,9 @@
 #define PWM_1	21
 
 /* Includes ------------------------------------------------------------------*/
-#include "main.h"
 #include "stm32f0xx_hal.h"
+#include "main.h"
+#include "cap1114.h"
 
 /* USER CODE BEGIN Includes */
 
@@ -232,12 +233,20 @@ int main(void)
   print_cards();
   /* USER CODE END 2 */
 
+  HAL_StatusTypeDef ret = HAL_OK;
+  uint8_t tx_buf[] = {0xFD, 0, 0, 0, 0, 0};
+  uint8_t rx_buf[] = {0xFD, 0, 0, 0, 0, 0};
+
+  cap1114_probe(&hi2c1);
+  uint16_t temp = 0;
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
   /* USER CODE END WHILE */
 	  HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+	  cap1114_button_status(&hi2c1, &temp);
 	  HAL_Delay(500);
   /* USER CODE BEGIN 3 */
 
@@ -284,7 +293,7 @@ void SystemClock_Config(void)
 
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1|RCC_PERIPHCLK_I2C1;
   PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK1;
-  PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_HSI;
+  PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_SYSCLK;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
@@ -363,7 +372,7 @@ static void MX_I2C1_Init(void)
 {
 
   hi2c1.Instance = I2C1;
-  hi2c1.Init.Timing = 0x2000090E;
+  hi2c1.Init.Timing = 0x20303E5D;
   hi2c1.Init.OwnAddress1 = 0;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
@@ -397,7 +406,7 @@ static void MX_I2C2_Init(void)
 {
 
   hi2c2.Instance = I2C2;
-  hi2c2.Init.Timing = 0x2000090E;
+  hi2c2.Init.Timing = 0x20303E5D;
   hi2c2.Init.OwnAddress1 = 0;
   hi2c2.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c2.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
@@ -536,6 +545,18 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
+  /* reset pin */
+  GPIO_InitStruct.Pin = GPIO_PIN_5;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET);
+  HAL_Delay(20);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET);
+  HAL_Delay(20);
 }
 
 /* USER CODE BEGIN 4 */
@@ -599,7 +620,8 @@ int __io_getchar(void) {
 
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
 {
-	printf("%u\n", htim3.Instance->CCR3);
+	HAL_TIMEx_PWMN_Stop_DMA(&htim3, TIM_CHANNEL_3);
+//	printf("%u\n", htim3.Instance->CCR3);
 //	printf("%u\n", htim3.Instance->ARR);
 }
 
