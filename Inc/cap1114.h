@@ -11,6 +11,7 @@
 #include "stm32f0xx_hal.h"
 
 #define CAP1114_I2C_ADDR			0x50
+#define CAP1114_NUM_SENSORS			14
 
 #define CAP1114_BUTTON_STATUS1		0x03
 #define CAP1114_BUTTON_STATUS2		0x04
