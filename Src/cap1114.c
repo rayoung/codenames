@@ -9,11 +9,12 @@
 
 static uint8_t i2c_buf[4];
 static uint16_t button_mask[] = {0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x100, 0x200,
-						  0x400, 0x800, 0x1000, 0x2000, 0x4000, 0x8000
-						  };
+						  	  	 0x400, 0x800, 0x1000, 0x2000, 0x4000, 0x8000
+						  	  	 };
 
 static uint16_t buttons_pressed = 0;
-
+static uint8_t sensors_enabled = 0xFF;
+static uint8_t group_sensors_enabled = 0x7F;
 static void cap1114_clear_int(I2C_HandleTypeDef *hi2c)
 {
 	/* read status register */
@@ -90,6 +91,11 @@ void cap1114_init(I2C_HandleTypeDef *hi2c)
 	i2c_buf[1] = 0x03;
 	cap1114_write(hi2c, i2c_buf, 2);
 
+	/* max multiple touches */
+	i2c_buf[0] = CAP1114_MULTI_TOUCH_CONFIG;
+	i2c_buf[1] = 0x0D;//0x83;
+	cap1114_write(hi2c, i2c_buf, 2);
+
 	/* clear interrupt */
 	cap1114_clear_int(hi2c);
 }
@@ -107,23 +113,68 @@ void cap1114_probe(I2C_HandleTypeDef *hi2c)
 
 void cap1114_button_status(I2C_HandleTypeDef *hi2c, uint16_t *buttons)
 {
+	/* read out buttons */
 	uint8_t *but = (uint8_t*)buttons;
 	but[0] = CAP1114_BUTTON_STATUS1;
 	cap1114_read(hi2c, but, 2);
 
 	cap1114_clear_int(hi2c);
 
+	/* find buttons that were different */
 	uint16_t pressed = buttons_pressed ^ buttons[0];
-	buttons_pressed |= buttons[0];
-	uint8_t i = 0;
-
-	printf("pressed ");
-	for (i = 0; i < CAP1114_NUM_SENSORS; i++)
+	if (pressed)
 	{
-		if (buttons_pressed & button_mask[i])
+		buttons_pressed |= buttons[0];
+
+		/* figure out which sensors to disable */
+		uint8_t sensors = sensors_enabled;
+		uint8_t group_sensors = group_sensors_enabled;
+
+		uint8_t i = 0;
+		for (i = 0; i < CAP1114_NUM_SENSORS; i++)
 		{
-			printf("%u ", i);
+			if (pressed & button_mask[i])
+			{
+				if (i < 7)
+				{
+					sensors &= ~(1 << i);
+				}
+				else
+				{
+					group_sensors &= ~(1 << (i-7));
+				}
+			}
 		}
+
+//		printf("0x%02x, 0x%02x\n", sensors, group_sensors);
+
+		/* disable sensors */
+		if (sensors != sensors_enabled)
+		{
+			i2c_buf[0] = CAP1114_SENSOR_ENABLE;
+			i2c_buf[1] = sensors;
+			cap1114_write(hi2c, i2c_buf, 2);
+
+			sensors_enabled = sensors;
+		}
+
+		if (group_sensors != group_sensors_enabled)
+		{
+			i2c_buf[0] = CAP1114_GROUP_SENSOR_ENABLE;
+			i2c_buf[1] = group_sensors;
+			cap1114_write(hi2c, i2c_buf, 2);
+			group_sensors_enabled = group_sensors;
+		}
+
+
+		printf("b ");
+		for (i = 0; i < CAP1114_NUM_SENSORS; i++)
+		{
+			if (buttons_pressed & button_mask[i])
+			{
+				printf("%u ", i);
+			}
+		}
+		printf("\n");
 	}
-	printf("\n");
 }
