@@ -234,11 +234,15 @@ int main(void)
   /* USER CODE END 2 */
 
   HAL_StatusTypeDef ret = HAL_OK;
-  uint8_t tx_buf[] = {0xFD, 0, 0, 0, 0, 0};
-  uint8_t rx_buf[] = {0xFD, 0, 0, 0, 0, 0};
+  uint8_t tx_buf[] = {0x23, 0, 0, 0, 0, 0};
+  uint8_t rx_buf[] = {CAP1114_MAIN_STATUS_CTRL, 0, 0, 0, 0, 0};
 
-  cap1114_probe(&hi2c1);
+  cap1114_init(&hi2c1);
   uint16_t temp = 0;
+
+//  cap1114_write(&hi2c1, tx_buf, 2);
+//  cap1114_read(&hi2c1, rx_buf, 1);
+//  printf("config 0x%02x\n", rx_buf[0]);
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
@@ -246,8 +250,12 @@ int main(void)
   {
   /* USER CODE END WHILE */
 	  HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
-	  cap1114_button_status(&hi2c1, &temp);
-	  HAL_Delay(500);
+//	  rx_buf[0] = CAP1114_MAIN_STATUS_CTRL;
+//	  cap1114_read(&hi2c1, rx_buf, 1);
+
+//	  printf("0x%02x\n", rx_buf[0]);
+//	  cap1114_button_status(&hi2c1, &temp);
+	  HAL_Delay(350);
   /* USER CODE BEGIN 3 */
 
   }
@@ -545,18 +553,18 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /* reset pin */
-  GPIO_InitStruct.Pin = GPIO_PIN_5;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET);
-  HAL_Delay(20);
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET);
-  HAL_Delay(20);
+//  /* reset pin */
+//  GPIO_InitStruct.Pin = GPIO_PIN_5;
+//  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+//  GPIO_InitStruct.Pull = GPIO_NOPULL;
+//  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+//  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+//
+//
+//  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET);
+//  HAL_Delay(20);
+//  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET);
+//  HAL_Delay(20);
 }
 
 /* USER CODE BEGIN 4 */
@@ -620,7 +628,7 @@ int __io_getchar(void) {
 
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
 {
-	HAL_TIMEx_PWMN_Stop_DMA(&htim3, TIM_CHANNEL_3);
+	HAL_TIM_Base_Stop(&htim3);
 //	printf("%u\n", htim3.Instance->CCR3);
 //	printf("%u\n", htim3.Instance->ARR);
 }

@@ -42,7 +42,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "stm32f0xx_hal.h"
 /* USER CODE END Includes */
 
 /* Private define ------------------------------------------------------------*/
@@ -60,6 +60,9 @@
 
 #define CAP1114_RESET_Pin	GPIO_PIN_5
 #define CAP1114_RESET_Port	GPIOB
+
+#define CAP1114_ALERT_Pin	GPIO_PIN_4
+#define CAP1114_ALERT_Port	GPIOB
 
 typedef enum Card
 {

@@ -31,9 +31,10 @@
   ******************************************************************************
   */
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f0xx_hal.h"
+#include "main.h"
 #include "stm32f0xx.h"
 #include "stm32f0xx_it.h"
+#include "cap1114.h"
 
 /* USER CODE BEGIN 0 */
 
@@ -41,7 +42,9 @@
 
 /* External variables --------------------------------------------------------*/
 
+extern I2C_HandleTypeDef hi2c1;
 extern TIM_HandleTypeDef htim3;
+
 
 /******************************************************************************/
 /*            Cortex-M0 Processor Interruption and Exception Handlers         */ 
@@ -70,6 +73,13 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /* USER CODE BEGIN 1 */
+
+void EXTI4_15_IRQHandler(void)
+{
+	HAL_GPIO_EXTI_IRQHandler(CAP1114_ALERT_Pin);
+	uint16_t temp = 0;
+	cap1114_button_status(&hi2c1, &temp);
+}
 
 void TIM3_IRQHandler(void)
 {
